@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سلة الطلبات - مطعم الامبراطور</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root{
+    --main-color:#2ecc71;
+    --bg-light:#ffffff;
+    --text-dark:#333;
+    --card-bg:#f8f8f8;
+    --border-color:#ddd;
+}
+body{
+    background:var(--bg-light);
+    color:var(--text-dark);
+    font-family:'Cairo',sans-serif;
+    padding-bottom:120px;
+}
+.header{
+    text-align:center;
+    padding:20px;
+    font-size:24px;
+    font-weight:700;
+    border-bottom:1px solid var(--border-color);
+    background:var(--bg-light);
+}
+.product-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--card-bg);
+    padding:10px 15px;
+    border-radius:10px;
+    margin-bottom:10px;
+    border:1px solid var(--border-color);
+}
+.product-info{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+/* إضافة ستايل للصورة عشان لو مش موجودة في السلة متبوظش الشكل */
+.product-info img{
+    width:50px;
+    height:50px;
+    object-fit:cover;
+    border-radius:8px;
+    background: #eee;
+}
+.qty-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.qty-btn{
+    width:30px;
+    height:30px;
+    background:#fff;
+    border:1px solid var(--main-color);
+    border-radius:6px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:bold;
+    color:var(--main-color);
+    cursor: pointer;
+}
+.total-bar{
+    position:fixed;
+    bottom:20px;
+    left:20px;
+    right:20px;
+    background:var(--main-color);
+    color:#fff;
+    padding:15px 20px;
+    border-radius:15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-weight:700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <a href="index.html" style="float: right; color: var(--text-dark); font-size: 18px;"><i class="fa-solid fa-arrow-right"></i></a>
+    📋 سلة طلباتك
+</div>
+
+<div class="container py-3" id="cartContainer">
+    </div>
+
+<div class="container py-2 mb-5">
+    <div class="card p-3 shadow-sm border-0">
+        <label class="fw-bold mb-2">طريقة الاستلام:</label>
+        <select id="orderType" class="form-select mb-3">
+            <option value="استلام">استلام من المطعم</option>
+            <option value="توصيل">توصيل للمنزل</option>
+        </select>
+        
+        <label class="fw-bold mb-2">بيانات التواصل:</label>
+        <input type="text" id="customerName" placeholder="الاسم بالكامل" class="form-control mb-2">
+        <input type="tel" id="customerPhone" placeholder="رقم الهاتف" class="form-control mb-2">
+        <textarea id="customerAddress" placeholder="العنوان بالتفصيل (في حالة التوصيل)" class="form-control mb-3" style="display:none;" rows="2"></textarea>
+        
+        <button class="btn btn-success btn-lg w-100 fw-bold" onclick="sendOrder()">
+            إرسال الطلب عبر واتساب <i class="fa-brands fa-whatsapp ms-1"></i>
+        </button>
+    </div>
+</div>
+
+<div class="total-bar">
+    <span>إجمالي الحساب:</span>
+    <div><b id="totalPrice">0</b> ج.م</div>
+</div>
+
+<script>
+// استرجاع السلة
+let cart = JSON.parse(localStorage.getItem('myCart')) || {};
+
+function renderCart(){
+    const container = document.getElementById('cartContainer');
+    container.innerHTML = '';
+    
+    const cartKeys = Object.keys(cart);
+    
+    if(cartKeys.length === 0){
+        container.innerHTML = `<div class="text-center py-5">
+            <i class="fa-solid fa-basket-shopping fa-3x mb-3" style="color:#ccc"></i>
+            <p>السلة فارغة، يلا اطلب أكلك!</p>
+            <a href="index.html" class="btn btn-outline-success">الرجوع للمنيو</a>
+        </div>`;
+        updateTotal();
+        return;
+    }
+
+    cartKeys.forEach(cartId => {
+        const item = cart[cartId];
+        container.innerHTML += `
+        <div class="product-row">
+            <div class="product-info">
+                <div>
+                    <div class="fw-bold">${item.name}</div>
+                    <div class="text-muted small">${item.price} ج.م</div>
+                </div>
+            </div>
+            <div class="qty-controls">
+                <button class="qty-btn" onclick="updateCartQty('${cartId}', -1)">-</button>
+                <span class="fw-bold">${item.qty}</span>
+                <button class="qty-btn" onclick="updateCartQty('${cartId}', 1)">+</button>
+            </div>
+        </div>
+        `;
+    });
+    updateTotal();
+}
+
+function updateCartQty(cartId, change){
+    if(!cart[cartId]) return;
+    
+    cart[cartId].qty += change;
+    
+    if(cart[cartId].qty <= 0) {
+        delete cart[cartId];
+    }
+    
+    localStorage.setItem('myCart', JSON.stringify(cart));
+    renderCart();
+}
+
+function updateTotal(){
+    let total = 0;
+    for(let id in cart) {
+        total += cart[id].qty * cart[id].price;
+    }
+    document.getElementById('totalPrice').innerText = total;
+}
+
+// تبديل ظهور العنوان بناءً على نوع الطلب
+document.getElementById('orderType').addEventListener('change', function(){
+    const addressInput = document.getElementById('customerAddress');
+    if(this.value === 'توصيل') {
+        addressInput.style.display = 'block';
+    } else {
+        addressInput.style.display = 'none';
+    }
+});
+
+function sendOrder(){
+    const cartKeys = Object.keys(cart);
+    if(cartKeys.length === 0){ alert('السلة فارغة!'); return; }
+    
+    const name = document.getElementById('customerName').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+    const address = document.getElementById('customerAddress').value.trim();
+    const type = document.getElementById('orderType').value;
+
+    if(!name || !phone || (type === 'توصيل' && !address)){
+        alert('يا ملك، كمل بياناتك عشان الأوردر يوصل صح!');
+        return;
+    }
+
+    // تجهيز رسالة الواتساب
+    let msg = `*طلب جديد من مطعم الامبراطور* 👑%0A%0A`;
+    msg += `*الاسم:* ${name}%0A`;
+    msg += `*الهاتف:* ${phone}%0A`;
+    msg += `*نوع الطلب:* ${type}%0A`;
+    if(type === 'توصيل') msg += `*العنوان:* ${address}%0A`;
+    
+    msg += `%0A*الطلبات:*%0A`;
+    
+    for(let id in cart){
+        const item = cart[id];
+        msg += `• ${item.name} (عدد ${item.qty}) -> ${item.price * item.qty} ج.م%0A`;
+    }
+    
+    msg += `%0A*الإجمالي:* ${document.getElementById('totalPrice').innerText} ج.م%0A`;
+    msg += `%0A_تم الطلب عبر الموقع الإلكتروني_`;
+
+    // رقم الواتساب بتاعك
+    const whatsappNumber = "201040534865";
+    window.open(`https://wa.me/${whatsappNumber}?text=${msg}`, '_blank');
+}
+
+// تشغيل العرض عند التحميل
+renderCart();
+</script>
+
+</body>
+</html>
