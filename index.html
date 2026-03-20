@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مطعم الامبراطور - القائمة المتطورة</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root { --main-color: #2ecc71; --bg-light: #ffffff; --card-bg: #f8f8f8; }
+        body { background: var(--bg-light); font-family: 'Cairo', sans-serif; padding-bottom: 120px; }
+        .shop-header { text-align: center; padding: 20px; position: sticky; top: 0; z-index: 1000; background: #fff; border-bottom: 1px solid #ddd; }
+        .shop-header h4{
+    margin-bottom:25px;
+    font-weight:700;
+    font-size:1.7rem;
+}
+        .categories-bar { display: flex; overflow-x: auto; padding: 10px 0; gap: 10px; }
+        .cat-badge { padding: 8px 16px; border-radius: 50px; background: var(--card-bg); cursor: pointer; white-space: nowrap; }
+        .cat-badge.active { background: var(--main-color); color: #fff; }
+        
+        .product-card { border: 1px solid #eee; background: var(--card-bg); border-radius: 15px; overflow: hidden; margin-bottom: 15px; }
+        .product-img { width: 100%; height: 120px; object-fit: cover; }
+        .product-info { padding: 12px; }
+        .product-price { color: var(--main-color); font-weight: 700; font-size: 1.1rem; display: block; margin-bottom: 8px; }
+        
+        /* أزرار التحكم +/- */
+        .qty-controls { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid var(--main-color); border-radius: 10px; padding: 4px; }
+        .qty-btn { background: var(--main-color); color: white; border: none; width: 32px; height: 32px; border-radius: 8px; font-weight: bold; }
+        
+        .add-initial { width: 100%; background: #fff; border: 2px solid var(--main-color); color: var(--main-color); border-radius: 10px; padding: 6px; font-weight: 700; }
+        
+        .cart-bar { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--main-color); color: #fff; padding: 15px; border-radius: 15px; display: none; justify-content: space-between; text-decoration: none; z-index: 1001; }
+    </style>
+</head>
+<body>
+
+<div class="shop-header">
+    <h4>👑 مطعم الامبراطور</h4>
+     <h5 class="tagline">طعم يفرق عن أي مكان 😋</h5>
+        <!-- Categories -->
+    <div class="categories-bar" id="catBar">
+        <div class="cat-badge active" onclick="filterProducts('الكل', this)">الكل</div>
+        <div class="cat-badge" onclick="filterProducts('كشري', this)">🍝 كشري</div>
+        <div class="cat-badge" onclick="filterProducts('طواجن', this)">🍲 طواجن</div>
+        <div class="cat-badge" onclick="filterProducts('طواجن المونزاريلا', this)">🍲 طواجن المونزاريلا</div>
+        <div class="cat-badge" onclick="filterProducts('ميكسات', this)">🔥 ميكسات</div>
+        <div class="cat-badge" onclick="filterProducts('سندوتشات', this)">🥪 سندوتشات</div>
+        <div class="cat-badge" onclick="filterProducts('مشويات', this)">🍖 مشويات</div>
+        <div class="cat-badge" onclick="filterProducts('حلو', this)">🍰 حلو</div>
+    </div>
+</div>
+
+<div class="container py-3">
+    <div class="row g-3" id="productsGrid"></div>
+</div>
+
+<a href="checkout.html" class="cart-bar" id="cartBar">
+    <div><i class="fa-solid fa-basket-shopping me-2"></i><span id="cartCount">0</span> صنف | <b id="cartTotal">0</b> ج.م</div>
+    <div class="fw-bold">عرض السلة <i class="fa-solid fa-chevron-left ms-1"></i></div>
+</a>
+
+<script>
+const products = [
+    { id: 1, name: 'كشرى ميني', cat: 'كشري', img: 'https://i.ibb.co/JwsBpcr6/IMG.jpg', variants: [{ name: 'سادة', price: 30 }, { name: 'كبدة', price: 40 }, { name: 'سجق', price: 40 }] },
+     { id: 2, name: 'كشرى سوبر', cat: 'كشري', img: 'https://i.ibb.co/JwsBpcr6/IMG.jpg', variants: [{ name: 'سادة', price: 40 }, { name: 'كبدة', price: 50 }, { name: 'سجق', price: 50 }] },
+     { id: 3, name: 'كشرى لوكس', cat: 'كشري', img: 'https://i.ibb.co/JwsBpcr6/IMG.jpg', variants: [{ name: 'سادة', price: 50 }, { name: 'كبدة', price: 60 }, { name: 'سجق', price: 60 }] },
+     { id: 4, name: 'كشرى اسبيشيال', cat: 'كشري', img: 'https://i.ibb.co/JwsBpcr6/IMG.jpg', variants: [{ name: 'سادة', price: 60 }, { name: 'كبدة', price: 70 }, { name: 'سجق', price: 70 }] },
+     { id: 5, name: 'كشرى الامبراطور', cat: 'كشري', img: 'https://i.ibb.co/JwsBpcr6/IMG.jpg', variants: [{ name: 'سادة', price: 70 }, { name: 'كبدة', price: 80 }, { name: 'سجق', price: 80 }] },
+    { id: 6, name: 'طاجن لحمة', cat: 'طواجن', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'لحمة', price: 50 }] },
+    { id: 7, name: 'طاجن فراخ', cat: 'طواجن', img: 'https://i.ibb.co/b5XvrSv5/images-4-6.jpg', variants: [{ name: 'فراخ', price: 50 } ,] },
+    { id: 8, name: 'طاجن سجق', cat: 'طواجن', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'سجق', price: 50}] },
+   { id: 9, name: 'طاجن كبدة', cat: 'طواجن', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [ { name: 'كبدة', price: 45} ] },
+    { id: 10, name: 'طاجن لحمة + كشرى', cat: 'ميكسات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'طاجن لحمة', price: 70 }] },
+    { id: 11, name: 'طاجن فراخ + كشرى', cat: 'ميكسات', img: 'https://i.ibb.co/b5XvrSv5/images-4-6.jpg', variants: [{ name: 'طاجن فراخ', price: 70 }] },
+   { id: 12, name: 'طاجن سجق + كشرى', cat: 'ميكسات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'طاجن سجق', price: 70 }] },
+    { id: 13, name: 'طاجن كبدة + كشرى', cat: 'ميكسات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'طاجن كبدة', price: 65 }] },
+     { id: 14, name: 'طاجن لحمة مونزاريلا', cat: 'طواجن المونزاريلا', img: 'https://i.ibb.co/GQ5FKNyh/cheese-and-meat-pasta-bake-in-a-white-dish-on-a-transparent-background-png.png', variants: [{ name: 'طاجن لحمة', price: 80 }] },
+    { id: 15, name: 'طاجن فراخ مونزاريلا', cat: 'طواجن المونزاريلا', img: 'https://i.ibb.co/GQ5FKNyh/cheese-and-meat-pasta-bake-in-a-white-dish-on-a-transparent-background-png.png', variants: [{ name: 'طاجن فراخ', price: 80 }] },
+   { id: 16, name: 'طاجن سجق مونزاريلا', cat: 'طواجن المونزاريلا', img: 'https://i.ibb.co/GQ5FKNyh/cheese-and-meat-pasta-bake-in-a-white-dish-on-a-transparent-background-png.png', variants: [{ name: 'طاجن سجق', price: 80 }] },
+    { id: 17, name: 'طاجن كبدة مونزاريلا', cat: 'طواجن المونزاريلا', img: 'https://i.ibb.co/GQ5FKNyh/cheese-and-meat-pasta-bake-in-a-white-dish-on-a-transparent-background-png.png', variants: [{ name: 'طاجن كبدة', price: 75 }] },
+     { id: 18, name: 'حواوشى بلدى', cat: 'سندوتشات', img: 'https://i.ibb.co/wZHsMKpD/9095e32d-6088-4fb2-8697-c7599aa11258.jpg', variants: [{ name: 'حواوشى بلدى', price: 25 }] },
+     { id: 19, name: 'حواوشى فحم', cat: 'سندوتشات', img: 'https://i.ibb.co/wZHsMKpD/9095e32d-6088-4fb2-8697-c7599aa11258.jpg', variants: [{ name: 'حواوشى فحم', price: 35 }] },
+     { id: 20, name: 'كبدة بلدى', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'كبدة بلدى', price: 25 }] },
+     { id: 21, name: 'كبدة فينو', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'كبدة فينو', price: 20 }] },
+     { id: 22, name: 'كبدة سورى', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'كبدة سورى', price: 40 }] },
+     { id: 23, name: 'سجق بلدى', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'سجق بلدى', price: 25 }] },
+     { id: 24, name: 'سجق سورى', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'سجق سورى', price: 40 }] },
+     { id: 25, name: 'استربس سورى', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'استربس سورى', price: 50 }] },
+     { id: 26, name: 'استربس فينو', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'استربس فينو', price: 35 }] },
+     { id: 27, name: 'بطاطس سورى', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'بطاطس سورى', price: 30 }] },
+     { id: 28, name: 'بطاطس سورى مونزاريلا', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'بطاطس سورى', price: 35 }] },
+     { id: 29, name: 'بطاطس فينو', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'بطاطس فينو', price: 20 }] },
+     { id: 30, name: 'برجر سنجل', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'برجر سنجل', price: 40 }] },
+     { id: 31, name: 'برجر دوبل', cat: 'سندوتشات', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'برجر دوبل', price: 55 }] },
+     
+     { id: 32, name: 'ارز لبن سادة', cat: 'حلو', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'ارز لبن سادة', price: 15 }] },
+     { id: 33, name: 'ارز لبن فرن', cat: 'حلو', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'ارز لبن فرن', price: 20 }] },
+     { id: 34, name: 'كاسترد سادة', cat: 'حلو', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'كاسترد سادة', price: 15 }] },
+     { id: 35, name: 'ليزى كيك شيكولاته', cat: 'حلو', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'ليزى كيك شيكولاته', price: 30 }] },
+     { id: 36, name: 'فنبلة مانجو شيكولاته', cat: 'حلو', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'فنبلة مانجو شيكولاته', price: 35 }] },
+     { id: 37, name: 'طاجن ام على سادة', cat: 'حلو', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'طاجن ام على', price: 35 }] },
+     { id: 38, name: 'طاجن ام على مكسرات', cat: 'حلو', img: 'https://i.ibb.co/7xsLyPZM/for-web-1-30.jpg', variants: [{ name: 'طاجن ام على', price: 50 }] },
+    
+    { id: 39, name: 'فراخ مشوية', cat: 'مشويات', img: 'https://i.ibb.co/6cmJtpZ1/maxresdefault-2.jpg', variants: [{ name: 'ربع', price: 75 }, { name: 'نصف', price: 140 }, { name: 'كيلو', price: 270 }] }
+];
+
+let cart = {};
+
+function renderProducts(filter = 'الكل') {
+    const grid = document.getElementById('productsGrid');
+    grid.innerHTML = '';
+    const filtered = filter === 'الكل' ? products : products.filter(p => p.cat === filter);
+
+    filtered.forEach(p => {
+        grid.innerHTML += `
+        <div class="col-6 col-md-4">
+            <div class="product-card">
+                <img src="${p.img}" class="product-img">
+                <div class="product-info">
+                    <h6 class="fw-bold" style="font-size:0.9rem">${p.name}</h6>
+                    <select class="form-select form-select-sm mb-2" onchange="refreshProductUI(${p.id})">
+                        ${p.variants.map((v, i) => `<option value="${i}">${v.name}</option>`).join('')}
+                    </select>
+                    <span class="product-price" id="price-${p.id}"></span>
+                    <div id="controls-${p.id}"></div>
+                </div>
+            </div>
+        </div>`;
+        refreshProductUI(p.id); // تحديث السعر والزرار لأول مرة
+    });
+}
+
+// دالة تحديث شكل المنتج بناءً على النوع المختار
+function refreshProductUI(productId) {
+    const product = products.find(p => p.id === productId);
+    const select = document.querySelector(`#controls-${productId}`).parentElement.querySelector('select');
+    const variantIdx = select.value;
+    const variant = product.variants[variantIdx];
+    const cartId = `${productId}-${variantIdx}`; // المعرف الفريد للصنف بنوعه
+
+    // تحديث السعر
+    document.getElementById(`price-${productId}`).innerText = `${variant.price} ج.م`;
+
+    // تحديث شكل الزرار (إضافة أو +/-)
+    const container = document.getElementById(`controls-${productId}`);
+    if (cart[cartId] && cart[cartId].qty > 0) {
+        container.innerHTML = `
+            <div class="qty-controls">
+                <button class="qty-btn" onclick="updateQty('${cartId}', -1, ${productId})">-</button>
+                <span class="fw-bold">${cart[cartId].qty}</span>
+                <button class="qty-btn" onclick="updateQty('${cartId}', 1, ${productId})">+</button>
+            </div>`;
+    } else {
+        container.innerHTML = `<button class="add-initial" onclick="updateQty('${cartId}', 1, ${productId})">إضافة +</button>`;
+    }
+}
+
+function updateQty(cartId, change, productId) {
+    if (!cart[cartId]) {
+        const [pId, vIdx] = cartId.split('-');
+        const product = products.find(p => p.id == pId);
+        const variant = product.variants[vIdx];
+        cart[cartId] = { name: `${product.name} (${variant.name})`, price: variant.price, qty: 0 };
+    }
+
+    cart[cartId].qty += change;
+
+    if (cart[cartId].qty <= 0) delete cart[cartId];
+
+    refreshProductUI(productId);
+    updateCartBar();
+    localStorage.setItem('myCart', JSON.stringify(cart));
+}
+
+function updateCartBar() {
+    let count = 0, total = 0;
+    for (let key in cart) {
+        count += cart[key].qty;
+        total += cart[key].qty * cart[key].price;
+    }
+    const bar = document.getElementById('cartBar');
+    if (count > 0) {
+        bar.style.display = 'flex';
+        document.getElementById('cartCount').innerText = count;
+        document.getElementById('cartTotal').innerText = total;
+    } else {
+        bar.style.display = 'none';
+    }
+}
+
+function filterProducts(cat, el) {
+    document.querySelectorAll('.cat-badge').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderProducts(cat);
+}
+
+renderProducts();
+</script>
+</body>
+</html>
